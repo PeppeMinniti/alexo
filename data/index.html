@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ALEXO · Impostazioni</title>
+<style>
+  :root{
+    --bg:#0a0e12; --panel:#111820; --panel2:#0e141b; --line:#1d2a35;
+    --cy:#00e5ff; --cy-d:#0a99aa; --txt:#dfeef2; --mut:#7f97a3; --mag:#ff2ea6;
+    --ok:#25d07a; --warn:#ffb02e;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.45 system-ui,Segoe UI,Roboto,sans-serif}
+  header{position:sticky;top:0;z-index:5;background:linear-gradient(180deg,#0a0e12,#0a0e12ee);
+    border-bottom:1px solid var(--line);padding:14px 16px;display:flex;align-items:center;gap:12px}
+  header h1{font-size:18px;margin:0;letter-spacing:3px;color:var(--cy)}
+  header .sub{color:var(--mut);font-size:12px}
+  main{max-width:720px;margin:0 auto;padding:16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin:0 0 16px;overflow:hidden}
+  .card h2{font-size:14px;margin:0;padding:12px 16px;background:var(--panel2);border-bottom:1px solid var(--line);
+    color:var(--cy);letter-spacing:1px;text-transform:uppercase}
+  .card .body{padding:8px 16px 16px}
+  .row{padding:12px 0;border-bottom:1px dashed var(--line)}
+  .row:last-child{border-bottom:0}
+  .row label{font-weight:600;display:block;margin-bottom:2px}
+  .row .desc{color:var(--mut);font-size:12.5px;margin:2px 0 8px}
+  input[type=number],input[type=text],textarea,select{
+    width:100%;background:#0b1117;color:var(--txt);border:1px solid var(--line);border-radius:8px;
+    padding:9px 10px;font:inherit}
+  textarea{min-height:96px;resize:vertical}
+  input[type=range]{width:100%}
+  .inline{display:flex;align-items:center;gap:10px}
+  .inline input[type=number]{max-width:120px}
+  .sw{display:flex;align-items:center;gap:10px}
+  .sw input{width:20px;height:20px}
+  .val{color:var(--cy);font-weight:700;min-width:44px;text-align:right}
+  /* Lettura live */
+  #live{position:sticky;top:57px;z-index:4}
+  .bar{height:12px;background:#0b1117;border:1px solid var(--line);border-radius:7px;overflow:hidden;position:relative}
+  .bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--ok),var(--warn),var(--mag));transition:width .12s}
+  .marks{position:relative;height:0}
+  .mark{position:absolute;top:-13px;width:2px;height:12px;background:var(--cy)}
+  .stat{display:flex;justify-content:space-between;gap:8px;color:var(--mut);font-size:12.5px;margin-top:6px}
+  .stat b{color:var(--txt)}
+  .actions{display:flex;gap:10px;position:sticky;bottom:0;background:#0a0e12ee;padding:14px 0;border-top:1px solid var(--line)}
+  button{flex:1;padding:12px;border-radius:10px;border:1px solid var(--cy-d);background:var(--cy);color:#001318;
+    font-weight:700;font-size:15px;letter-spacing:.5px}
+  button.ghost{background:transparent;color:var(--cy);border-color:var(--line)}
+  button:active{transform:translateY(1px)}
+  #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#0e141b;border:1px solid var(--cy-d);
+    color:var(--cy);padding:10px 16px;border-radius:10px;opacity:0;transition:opacity .25s;pointer-events:none}
+  #toast.show{opacity:1}
+  /* chat (stessa dello schermo, aggiornata a ogni nuovo messaggio) */
+  #chatBox{max-height:340px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;
+    background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px}
+  .msg{max-width:85%;padding:7px 11px;border-radius:12px;white-space:pre-wrap;word-wrap:break-word;font-size:14px}
+  .msg.u{align-self:flex-end;background:#0c2b33;border:1px solid var(--cy-d)}
+  .msg.a{align-self:flex-start;background:#141c24;border:1px solid var(--line)}
+  .msg.s{align-self:center;background:transparent;color:var(--mut);font-style:italic;font-size:12.5px;padding:2px 8px}
+  .msg .who{display:block;font-size:11px;color:var(--mut);margin-bottom:2px;letter-spacing:.5px}
+</style>
+</head>
+<body>
+<header>
+  <h1>ALEXO</h1><span class="sub">pannello impostazioni</span>
+</header>
+<main>
+
+  <!-- LETTURA LIVE -->
+  <div class="card" id="live">
+    <h2>Microfono in tempo reale</h2>
+    <div class="body">
+      <div class="marks"><span class="mark" id="mThresh" title="soglia"></span></div>
+      <div class="bar"><i id="barLevel"></i></div>
+      <div class="stat">
+        <span>livello: <b id="vLevel">–</b>/255</span>
+        <span>fondo: <b id="vFloor">–</b></span>
+        <span>soglia LED: <b id="vThresh">–</b></span>
+      </div>
+      <div style="height:8px"></div>
+      <div class="bar"><i id="barWake" style="background:linear-gradient(90deg,#0a99aa,#00e5ff)"></i></div>
+      <div class="stat">
+        <span>wake prob: <b id="vWake">–</b>/255</span>
+        <span>WiFi: <b id="vRssi">–</b> dBm</span>
+        <span>RAM: <b id="vHeap">–</b> KB</span>
+      </div>
+      <div class="desc" style="margin-top:8px">
+        Il <b>livello</b> è quanto suono sente il mic adesso; il <b>fondo</b> è il rumore
+        di base stimato da solo; la <b>soglia</b> (tacca cyan) è il punto oltre cui i LED
+        si accendono. Con un rumore di fondo guarda dove sta il livello e regola sotto.
+      </div>
+    </div>
+  </div>
+
+  <!-- CHAT (la stessa che scorre sul display TFT) -->
+  <div class="card" id="chatCard">
+    <h2>Chat</h2>
+    <div class="body">
+      <div id="chatBox"></div>
+      <div class="desc" style="margin-top:8px">La stessa conversazione che scorre sul display,
+        ultimi 40 messaggi. Si aggiorna da sola a ogni nuovo messaggio.</div>
+    </div>
+  </div>
+
+  <!-- MUSICA -->
+  <div class="card">
+    <h2>Musica</h2>
+    <div class="body">
+      <div class="row">
+        <label>Stazioni (una per riga)</label>
+        <div class="desc">Formato <code>chiave | nome | url</code>. La <b>chiave</b> è la
+          parola cercata nella frase (es. "metti <b>rock</b>"), il <b>nome</b> compare sul
+          display, l'<b>url</b> è lo stream <b>MP3</b> (il VS1053 non legge l'AAC). Metti le
+          chiavi più <b>specifiche prima</b> (es. "alternativ" prima di "rock"); righe doppie
+          = sinonimi per la stessa radio.</div>
+        <textarea id="musicStations" spellcheck="false" style="min-height:150px"></textarea>
+      </div>
+      <div class="row" style="border-bottom:0">
+        <label>Radio in riproduzione</label>
+        <div class="desc">Di' ad Alexo <code>metti musica rock</code> (oppure pop, country,
+          anni 80, anni 90). Per fermarla: il pulsante qui sotto <b>oppure</b> un click
+          sull'encoder. Stato: <b id="musicState">–</b>.</div>
+        <div class="desc" id="musicNow" style="color:var(--cy);font-weight:600;min-height:18px"></div>
+        <button id="btnMusicStop" class="ghost" style="margin-top:8px;width:100%" disabled>⏹ Ferma musica</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MIC / SILENZIO / LED -->
+  <div class="card">
+    <h2>Microfono · stop-al-silenzio · LED</h2>
+    <div class="body">
+      <div class="row">
+        <label>Stop dopo silenzio (ms)</label>
+        <div class="desc">Quanti millisecondi di silenzio continuo, dopo che hai parlato,
+          prima che la registrazione si chiuda da sola e parta la domanda. Più basso = più
+          reattivo ma rischia di tagliarti; più alto = aspetta di più. Tipico 1500.</div>
+        <input type="number" id="recSilenceMs" min="300" max="10000" step="100">
+      </div>
+      <div class="row">
+        <label>Margine soglia voce (×)</label>
+        <div class="desc">La soglia per capire "sto parlando" è calcolata sopra il rumore di
+          fondo: soglia = fondo × <b>questo</b> + margine minimo. Alza se il rumore di fondo (es.
+          ventilatore) viene scambiato per voce (non si ferma mai); abbassa se ti taglia. Tipico 1.6.</div>
+        <input type="number" id="recSilenceMargin" min="1" max="6" step="0.1">
+      </div>
+      <div class="row">
+        <label>Margine minimo assoluto (RMS)</label>
+        <div class="desc">Il "gradino" minimo sopra il fondo, in unità di energia. Aiuta quando
+          il fondo è quasi zero. Alza se in silenzio non si ferma; abbassa se non sente la voce
+          piano. Tipico 150.</div>
+        <input type="number" id="recSilenceFloor" min="0" max="4000" step="10">
+      </div>
+      <div class="row">
+        <label>LED · margine accensione (×)</label>
+        <div class="desc">Quanto sopra il rumore di fondo deve stare il suono perché i LED
+          reattivi si accendano. Alza se i LED lampeggiano con rumore di fondo; abbassa se
+          reagiscono poco. Tipico 3.0.</div>
+        <input type="number" id="micLvlMargin" min="1" max="8" step="0.1">
+      </div>
+      <div class="row">
+        <label>LED · soglia minima</label>
+        <div class="desc">Soglia minima assoluta di accensione dei LED. Alza per renderli meno
+          sensibili a rumori deboli. Tipico 40.</div>
+        <input type="number" id="micLvlFloor" min="0" max="500" step="5">
+      </div>
+      <div class="row">
+        <label>LED · permanenza (discesa)</label>
+        <div class="desc">Quanto in fretta i LED si <b>spengono</b> dopo un suono. Valore
+          <b>basso</b> = luce che "trascina", sfuma lentamente (più permanenza); valore <b>alto</b>
+          = si spengono di scatto. Tipico 0.25 (0.02–1).</div>
+        <input type="number" id="micLvlRelease" min="0.02" max="1" step="0.01">
+      </div>
+      <div class="row">
+        <label>LED · reattività (salita)</label>
+        <div class="desc">Quanto in fretta i LED si <b>accendono</b> quando arriva un suono. Basso
+          = salita lenta (ignora gli impulsi isolati, niente flash); alto = accensione immediata.
+          Tipico 0.12 (0.02–1).</div>
+        <input type="number" id="micLvlAttack" min="0.02" max="1" step="0.01">
+      </div>
+      <div class="row">
+        <label>LED reattivi al suono a riposo</label>
+        <div class="desc">Se acceso, a riposo l'anello "balla" col suono; se spento, resta buio
+          finché Alexo non lavora. (Equivale al doppio-click sull'encoder.)</div>
+        <div class="sw"><input type="checkbox" id="idleReactive"><span>abilita effetto reattivo</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WAKE WORD -->
+  <div class="card">
+    <h2>Wake word · "Okay Nabu"</h2>
+    <div class="body">
+      <div class="row">
+        <label>Guadagno wake (×)</label>
+        <div class="desc">Amplifica l'audio prima del riconoscitore. Alza se devi gridare
+          per svegliarlo; abbassa se si attiva da solo (falsi positivi, es. col ventilatore).
+          Troppo alto satura e peggiora. Tipico 3.</div>
+        <input type="number" id="wakeGain" min="1" max="12" step="1">
+      </div>
+      <div class="row">
+        <label>Soglia di attivazione (0–255)</label>
+        <div class="desc">Quanto dev'essere "sicuro" il riconoscitore per attivarsi. Più alto =
+          meno falsi positivi ma serve pronunciare bene; più basso = più sensibile. Tipico 246
+          (~0.96). Guarda "wake prob" qui sopra mentre dici la parola.</div>
+        <input type="number" id="wakeProbCutoff" min="100" max="255" step="1">
+      </div>
+      <div class="row">
+        <label>Finestra media (1–16)</label>
+        <div class="desc">Su quante misure consecutive fa la media prima di decidere. Più alto =
+          più stabile ma un filo più lento; più basso = più scattante ma più falsi. Tipico 5.</div>
+        <input type="number" id="wakeWindow" min="1" max="16" step="1">
+      </div>
+    </div>
+  </div>
+
+  <!-- AUDIO -->
+  <div class="card">
+    <h2>Audio</h2>
+    <div class="body">
+      <div class="row">
+        <label>Volume</label>
+        <div class="desc">Volume dell'altoparlante: <b>0 = muto</b>, 100 = massimo. Tutta la
+          corsa è utile (rimappata sulla zona udibile del VS1053). Si regola anche premendo e
+          girando l'encoder.</div>
+        <div class="inline"><input type="range" id="volume" min="0" max="100" step="1">
+          <span class="val" id="volumeV">–</span></div>
+      </div>
+      <div class="row">
+        <label>Voce di default (ElevenLabs Voice ID)</label>
+        <div class="desc">L'identificativo della voce di default presa da elevenlabs.io. Cambialo
+          per usare un'altra voce.</div>
+        <input type="text" id="voiceId" spellcheck="false" autocapitalize="off">
+      </div>
+      <div class="row">
+        <label>Voce alternativa (Voice ID)</label>
+        <div class="desc">Una seconda voce, usata quando la tua frase inizia con la parola-trigger
+          qui sotto. Utile per far "cambiare voce" ad Alexo con un comando.</div>
+        <input type="text" id="voiceIdAlt" spellcheck="false" autocapitalize="off">
+      </div>
+      <div class="row">
+        <label>Parole-trigger voce alternativa</label>
+        <div class="desc">Se la tua frase INIZIA con una di queste parole, Alexo risponde con la
+          voce alternativa invece della default. Puoi metterne <b>più d'una separandole con la
+          virgola</b> (es. <code>bene, ok, ehi</code>). Confronto in minuscolo. <b>Lascia vuoto</b>
+          per disattivare la voce alternativa.</div>
+        <input type="text" id="voiceTrigger" spellcheck="false" autocapitalize="off">
+      </div>
+    </div>
+  </div>
+
+  <!-- CERVELLO -->
+  <div class="card">
+    <h2>Cervello (Claude)</h2>
+    <div class="body">
+      <div class="row">
+        <label>Modello</label>
+        <div class="desc"><b>claude-haiku-4-5</b>: il più veloce ed economico (default, ideale per
+          una risposta vocale rapida). <b>claude-sonnet-5</b>: via di mezzo, più bravo di Haiku ma
+          più svelto/economico di Opus. <b>claude-opus-4-8</b>: il più intelligente, ma più lento e
+          costoso. Per un assistente vocale la <b>velocità conta</b>: Haiku o Sonnet sono di solito
+          la scelta migliore.</div>
+        <select id="llmModel">
+          <option value="claude-haiku-4-5">claude-haiku-4-5 (veloce/economico)</option>
+          <option value="claude-sonnet-5">claude-sonnet-5 (equilibrato)</option>
+          <option value="claude-opus-4-8">claude-opus-4-8 (massima intelligenza)</option>
+        </select>
+      </div>
+      <div class="row">
+        <label>Personalità (system prompt)</label>
+        <div class="desc">Le istruzioni permanenti che descrivono chi è Alexo e come deve
+          rispondere. Tienilo breve e chiaro: qui decidi tono, lingua e stile. Ricordati che le
+          risposte vengono lette ad alta voce (meglio frasi corte, niente elenchi/emoji).</div>
+        <textarea id="systemPrompt" spellcheck="false"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- EASTER EGG -->
+  <div class="card">
+    <h2>Easter egg</h2>
+    <div class="body">
+      <div class="row">
+        <label>Termini trigger</label>
+        <div class="desc">Se la domanda contiene uno di questi termini, Alexo antepone alla
+          risposta una frase fissa scherzosa. Più termini separati da <b>virgola</b> (es.
+          <code>sorprendimi, indovina</code>). Il confronto è "contiene" (ovunque nella frase),
+          in minuscolo. <b>Lascia vuoto</b> per disattivare l'easter-egg.</div>
+        <input type="text" id="eggTerms" spellcheck="false" autocapitalize="off">
+      </div>
+    </div>
+  </div>
+
+  <!-- ANTI-FANTASMA (WHISPER) -->
+  <div class="card">
+    <h2>Filtro anti-fantasma (Whisper)</h2>
+    <div class="body">
+      <div class="row">
+        <label>Frasi da scartare</label>
+        <div class="desc">Quando la registrazione è solo silenzio/rumore, il riconoscitore vocale
+          a volte "inventa" frasi (tipico: <b>Grazie</b>, <b>Grazie a tutti</b>, sottotitoli…).
+          Se la trascrizione è <b>esattamente</b> una di queste, Alexo la scarta senza rispondere.
+          Una per riga o separate da <b>virgola</b>. Confronto in minuscolo, senza punteggiatura ai
+          bordi (quindi "Grazie." e "grazie" sono uguali). <b>Vuoto</b> = filtro disattivato.</div>
+        <textarea id="hallucTerms" spellcheck="false"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="ghost" id="btnReset">Ripristina default</button>
+    <button id="btnSave">Salva</button>
+  </div>
+</main>
+
+<div id="toast"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+// campi semplici: id -> tipo
+const FIELDS = {
+  recSilenceMs:'int', recSilenceMargin:'float', recSilenceFloor:'int',
+  micLvlMargin:'float', micLvlFloor:'float', micLvlAttack:'float', micLvlRelease:'float', idleReactive:'bool',
+  wakeGain:'int', wakeProbCutoff:'int', wakeWindow:'int',
+  volume:'int', voiceId:'str', voiceIdAlt:'str', voiceTrigger:'str',
+  llmModel:'str', systemPrompt:'str', eggTerms:'str', hallucTerms:'str',
+  musicStations:'str'
+};
+
+function toast(msg, ok=true){
+  const t=$('toast'); t.textContent=msg; t.style.borderColor = ok?'#0a99aa':'#ff2ea6';
+  t.style.color = ok?'#00e5ff':'#ff2ea6'; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1800);
+}
+
+function apply(s){
+  for(const k in FIELDS){
+    if(!(k in s)) continue;
+    const el=$(k); if(!el) continue;
+    if(FIELDS[k]==='bool') el.checked = !!s[k];
+    else el.value = s[k];
+  }
+  if('volume' in s) $('volumeV').textContent = s.volume;
+}
+
+function collect(){
+  const o={};
+  for(const k in FIELDS){
+    const el=$(k); if(!el) continue;
+    if(FIELDS[k]==='bool') o[k]=el.checked;
+    else if(FIELDS[k]==='int') o[k]=parseInt(el.value,10);
+    else if(FIELDS[k]==='float') o[k]=parseFloat(el.value);
+    else o[k]=el.value;
+  }
+  return o;
+}
+
+async function load(){
+  try{ const r=await fetch('/api/settings'); apply(await r.json()); }
+  catch(e){ toast('Errore nel caricare', false); }
+}
+
+async function save(){
+  try{
+    const r=await fetch('/api/settings',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(collect())});
+    apply(await r.json()); toast('Salvato ✓');
+    // refresh della pagina: rilegge dal device i valori effettivi (clampati) e
+    // riallinea i campi, cosi' non si rischia di rimodificare valori gia' salvati.
+    setTimeout(()=>location.reload(), 700);
+  }catch(e){ toast('Errore nel salvare', false); }
+}
+
+async function reset(){
+  if(!confirm('Ripristinare i valori di fabbrica?')) return;
+  try{ const r=await fetch('/api/reset',{method:'POST'}); apply(await r.json()); toast('Ripristinato'); }
+  catch(e){ toast('Errore', false); }
+}
+
+async function musicStop(){
+  try{ await fetch('/api/music/stop',{method:'POST'}); toast('Musica fermata'); }
+  catch(e){ toast('Errore', false); }
+}
+
+$('volume').addEventListener('input', e=> $('volumeV').textContent = e.target.value);
+// Volume: auto-salva al RILASCIO dello slider (change), senza toccare il resto
+// ne' ricaricare la pagina. POST del solo campo volume.
+$('volume').addEventListener('change', async e=>{
+  const v = parseInt(e.target.value,10);
+  try{
+    await fetch('/api/settings',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({volume:v})});
+    toast('Volume '+v+' ✓');
+  }catch(err){ toast('Errore volume', false); }
+});
+// "Abilita effetto reattivo": auto-salva al click (come il volume), senza premere
+// Salva ne' ricaricare la pagina. POST del solo campo -> effetto immediato (idle E musica).
+$('idleReactive').addEventListener('change', async e=>{
+  const on = e.target.checked;
+  try{
+    await fetch('/api/settings',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({idleReactive:on})});
+    toast('Effetto reattivo '+(on?'ON':'OFF')+' ✓');
+  }catch(err){ toast('Errore', false); }
+});
+$('btnSave').addEventListener('click', save);
+$('btnReset').addEventListener('click', reset);
+$('btnMusicStop').addEventListener('click', musicStop);
+
+// Lettura live ogni secondo
+let lastChatRev=-1;
+async function loadChat(){
+  try{
+    const arr=await (await fetch('/api/chat')).json();
+    const box=$('chatBox'); box.innerHTML='';
+    const names=['Alexo','Tu','sistema'];
+    for(const m of arr){
+      const el=document.createElement('div');
+      el.className='msg '+(m.r===1?'u':m.r===2?'s':'a');
+      if(m.r!==2){const w=document.createElement('span');w.className='who';w.textContent=names[m.r]||'';el.appendChild(w);}
+      el.appendChild(document.createTextNode(m.t));
+      box.appendChild(el);
+    }
+    box.scrollTop=box.scrollHeight;   // sempre sull'ultimo
+  }catch(e){/* server occupato: riprova al prossimo giro */}
+}
+
+async function live(){
+  try{
+    const r=await fetch('/api/live'); const d=await r.json();
+    // refresh chat SOLO quando arriva un nuovo messaggio (chatRev cambia)
+    if(d.chatRev!==lastChatRev){ lastChatRev=d.chatRev; loadChat(); }
+    $('vLevel').textContent=d.level; $('vFloor').textContent=Math.round(d.floor);
+    $('vThresh').textContent=Math.round(d.thresh); $('vWake').textContent=d.wakeProb;
+    $('vRssi').textContent=d.rssi; $('vHeap').textContent=Math.round(d.heap/1024);
+    const playing = !!d.music;
+    $('musicState').textContent = playing ? 'in riproduzione' : 'ferma';
+    $('btnMusicStop').disabled = !playing;
+    // "In onda": emittente + brano (metadata ICY)
+    $('musicNow').textContent = playing
+      ? ('♪ ' + (d.station ? d.station + ' — ' : '') + (d.nowPlaying || '…'))
+      : '';
+    $('barLevel').style.width=(d.level*100/255)+'%';
+    $('barWake').style.width=(d.wakeProb*100/255)+'%';
+    // tacca soglia sulla stessa scala 0..255 del livello
+    const t=Math.max(0,Math.min(255,d.thresh));
+    $('mThresh').style.left=(t*100/255)+'%';
+  }catch(e){/* durante un'interazione il server e' occupato: ignora */}
+}
+
+load();
+loadChat();            // popola subito la chat al caricamento
+setInterval(live, 1000);
+</script>
+</body>
+</html>

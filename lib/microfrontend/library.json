@@ -1,0 +1,9 @@
+{
+  "name": "microfrontend",
+  "version": "1.0.0",
+  "license": "Apache-2.0",
+  "description": "TFLM micro_speech audio frontend (40 mel feat) + kissfft v130, per microWakeWord",
+  "build": {
+    "srcFilter": ["+<*>", "-<kiss_fft.c>", "-<tools/kiss_fftr.c>"]
+  }
+}
