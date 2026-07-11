@@ -12,6 +12,10 @@ interfaccia) è in **italiano**.
 > ⚠️ **Progetto hobbistico/educativo.** Per funzionare servono **3 API key tue**
 > (vedi sotto). Nessuna garanzia: usalo a tuo rischio.
 
+> 🖨️ **Il case è stampabile in 3D** — file `.3mf`/STL su
+> **[MakerWorld](https://makerworld.com/it/models/3040023-alexo-ai-voice-assistant-case-esp32-s3)**
+> (licenza CC BY 4.0).
+
 ---
 
 ## Come funziona
@@ -110,6 +114,7 @@ La guida completa e spiegata passo-passo (con il *perché* di ogni scelta) è ne
 - 📖 [MANUALE.md](MANUALE.md) — guida completa (hardware + software, spiegata semplice)
 - 🔌 [CABLAGGIO_HW.md](CABLAGGIO_HW.md) — collegamenti pin-per-pin
 - 🧩 [WAKEWORD.md](WAKEWORD.md) — la wake word locale nel dettaglio
+- 🖨️ [Case 3D su MakerWorld](https://makerworld.com/it/models/3040023-alexo-ai-voice-assistant-case-esp32-s3) — file stampabili (`.3mf`/STL), licenza CC BY 4.0
 
 ---
 
