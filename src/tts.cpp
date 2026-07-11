@@ -11,6 +11,37 @@
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
+#include "mic.h"
+#include "ui.h"
+#include <math.h>
+
+// Livello del ring DURANTE la voce: legge il MIC (come la musica) e ne ricava un
+// livello VU. MENO sensibile della musica (VOICE_LVL_DIV grande) perche' la voce e'
+// a volume alto. Passa-alto + MAD + noise-floor auto + envelope; cala nei silenzi.
+#define VOICE_LVL_DIV   30.0f
+#define VOICE_FLOOR     90.0f
+static uint8_t voiceLevel(const int16_t *s, size_t n) {
+  if (!n) return 0;
+  static double hpX = 0, hpY = 0; const double hpR = 0.95;
+  float acc = 0;
+  for (size_t i = 0; i < n; i++) {
+    double v = (double)s[i];
+    double y = v - hpX + hpR * hpY; hpX = v; hpY = y;
+    acc += fabsf((float)y);
+  }
+  float mad = acc / (float)n;
+  static float nf = -1.0f;
+  if (nf < 0.0f) nf = mad;
+  float k = (mad < nf) ? 0.05f : 0.0005f;
+  nf += (mad - nf) * k;
+  float thresh = nf + VOICE_FLOOR;
+  float target = (mad - thresh) / VOICE_LVL_DIV;
+  if (target < 0) target = 0; else if (target > 255) target = 255;
+  static float env = 0;
+  float ek = (target > env) ? 0.7f : 0.55f;  // attack veloce, release piu' svelto (reattivo)
+  env += (target - env) * ek;
+  return (uint8_t)(env + 0.5f);
+}
 
 // La voce di DEFAULT e' ora RUNTIME (gSettings.voiceId, dal pannello web); il
 // default di fabbrica sta in config.h (ELEVEN_VOICE_DEF).
@@ -156,8 +187,18 @@ bool ttsSpeak(VS1053 &player, const String &text, const String &voiceId) {
   uint8_t buf[512];
   size_t total = 0;
   uint32_t idle = millis();
+  uint32_t lastLvl = 0;
   while (http.connected() || (stream && stream->available())) {
     volumeApplyPending(player);   // regola il volume al volo MENTRE Alexo parla
+    // Ring REATTIVO alla voce: ogni ~30ms leggo il mic e pilotO il livello (ciano),
+    // come la musica ma meno sensibile. Throttlato per non affamare il feed VS1053.
+    if (millis() - lastLvl >= 30) {
+      lastLvl = millis();
+      static int16_t vbuf[160];
+      micFlush();
+      size_t g = micReadChunk(vbuf, 160);
+      if (g) uiSetLevel(voiceLevel(vbuf, g));
+    }
     int avail = stream->available();
     if (avail > 0) {
       int toRead = avail > (int)sizeof(buf) ? (int)sizeof(buf) : avail;
@@ -178,6 +219,7 @@ bool ttsSpeak(VS1053 &player, const String &text, const String &voiceId) {
   // svuota il decoder con un po' di silenzio
   memset(buf, 0, sizeof(buf));
   for (int i = 0; i < 4; i++) player.playChunk(buf, sizeof(buf));
+  uiSetLevel(0);   // fine voce: ring giu'
 
   Serial.printf("[tts] riprodotti %u byte MP3 in %lu ms\n",
                 (unsigned)total, (unsigned long)(millis() - t0));

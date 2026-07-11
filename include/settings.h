@@ -33,14 +33,15 @@ struct AlexoSettings {
   String   llmModel;          // es. claude-haiku-4-5 / claude-opus-4-8
   String   systemPrompt;      // "personalita'" di Alexo
 
-  // --- Easter-egg ---
-  String   eggTerms;          // termini trigger separati da virgola (vuoto = off)
-
   // --- Filtro anti-allucinazione Whisper ---
   String   hallucTerms;       // frasi-fantasma da scartare, separate da virgola (vuoto = off)
 
   // --- Musica (web-radio) ---
   String   musicStations;     // stazioni, una per riga "chiave | nome | url"
+
+  // --- Risposta personalizzata (trigger + testo) ---
+  String   replyTrigger;      // parola/frase nella domanda (vuoto = off -> risponde l'AI)
+  String   replyText;         // testo fisso che Alexo dice quando il trigger e' presente
 };
 
 extern AlexoSettings gSettings;

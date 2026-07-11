@@ -64,11 +64,12 @@ static void animThinking(uint32_t t) {
 }
 
 static void animSpeaking(uint32_t t) {
-  // pulsazione verde-acqua (~0.9s)
-  float p = 0.5f + 0.5f * sinf(t * 0.007f);
-  uint8_t b = (uint8_t)(20 + 110 * p);   // ~20..130
+  // REATTIVA alla voce: g_level arriva dal mic durante il TTS. Pulsazione CIANO che
+  // cala nei silenzi. Piccolo fondo per non spegnersi del tutto tra una parola e l'altra.
+  (void)t;
+  uint8_t b = (uint8_t)((uint16_t)g_level * 155 / 255);   // 0..155: nel silenzio -> spento
   for (int i = 0; i < LED_RING_COUNT; i++) {
-    R->setPixelColor(i, 0, b, (uint8_t)(b * 0.6f));
+    R->setPixelColor(i, 0, b, b);   // ciano (verde+blu uguali)
   }
 }
 

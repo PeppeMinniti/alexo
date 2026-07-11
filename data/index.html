@@ -277,17 +277,22 @@
     </div>
   </div>
 
-  <!-- EASTER EGG -->
+  <!-- RISPOSTA PERSONALIZZATA -->
   <div class="card">
-    <h2>Easter egg</h2>
+    <h2>Risposta personalizzata</h2>
     <div class="body">
       <div class="row">
-        <label>Termini trigger</label>
-        <div class="desc">Se la domanda contiene uno di questi termini, Alexo antepone alla
-          risposta una frase fissa scherzosa. Più termini separati da <b>virgola</b> (es.
-          <code>sorprendimi, indovina</code>). Il confronto è "contiene" (ovunque nella frase),
-          in minuscolo. <b>Lascia vuoto</b> per disattivare l'easter-egg.</div>
-        <input type="text" id="eggTerms" spellcheck="false" autocapitalize="off">
+        <label>Trigger</label>
+        <div class="desc">La parola o frase da cercare nella domanda. Se la domanda la
+          <b>contiene</b> (confronto in minuscolo), Alexo dice la risposta fissa qui sotto e
+          <b>salta l'AI</b>. <b>Lascia vuoto</b> per disattivare (risponde normalmente l'AI).</div>
+        <input type="text" id="replyTrigger" spellcheck="false" autocapitalize="off">
+      </div>
+      <div class="row">
+        <label>Risposta fissa</label>
+        <div class="desc">Il testo esatto che Alexo dice quando trova il trigger. Utile per
+          scherzi, battute fisse o riprese video ripetibili.</div>
+        <textarea id="replyText" spellcheck="false"></textarea>
       </div>
     </div>
   </div>
@@ -324,7 +329,7 @@ const FIELDS = {
   micLvlMargin:'float', micLvlFloor:'float', micLvlAttack:'float', micLvlRelease:'float', idleReactive:'bool',
   wakeGain:'int', wakeProbCutoff:'int', wakeWindow:'int',
   volume:'int', voiceId:'str', voiceIdAlt:'str', voiceTrigger:'str',
-  llmModel:'str', systemPrompt:'str', eggTerms:'str', hallucTerms:'str',
+  llmModel:'str', systemPrompt:'str', replyTrigger:'str', replyText:'str', hallucTerms:'str',
   musicStations:'str'
 };
 
@@ -357,8 +362,14 @@ function collect(){
 }
 
 async function load(){
-  try{ const r=await fetch('/api/settings'); apply(await r.json()); }
-  catch(e){ toast('Errore nel caricare', false); }
+  // Il web server e' SINCRONO (1 richiesta alla volta): se la GET si accavalla
+  // con /api/live o /api/chat puo' cadere e lasciare il form vuoto. Ritenta un
+  // po' di volte cosi' non serve ricaricare la pagina a mano.
+  for(let i=0;i<5;i++){
+    try{ const r=await fetch('/api/settings'); apply(await r.json()); return; }
+    catch(e){ await new Promise(res=>setTimeout(res,400)); }
+  }
+  toast('Errore nel caricare', false);
 }
 
 async function save(){
@@ -449,9 +460,14 @@ async function live(){
   }catch(e){/* durante un'interazione il server e' occupato: ignora */}
 }
 
-load();
-loadChat();            // popola subito la chat al caricamento
-setInterval(live, 1000);
+// Avvio SERIALIZZATO: il web server e' sincrono, quindi prima carichiamo il
+// form (critico), poi la chat, e solo alla fine avviamo il polling live. Cosi'
+// le fetch non si accavallano all'apertura e i campi si popolano sempre.
+(async function boot(){
+  await load();
+  await loadChat();    // popola la chat al caricamento
+  setInterval(live, 1000);
+})();
 </script>
 </body>
 </html>

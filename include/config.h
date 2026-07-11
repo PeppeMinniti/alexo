@@ -201,9 +201,6 @@
 //  = disattiva la voce alternativa. Confronto in minuscolo.
 #define ELEVEN_VOICE_ALT_DEF "CiwzbDpaN3pQXjTgx3ML"
 #define VOICE_TRIGGER_DEF    "bene"
-//  Termini dell'easter-egg (separati da virgola): se la domanda ne contiene uno,
-//  Alexo antepone una frase fissa (vedi runInteraction in main.cpp). Vuoto = off.
-#define EGG_TERMS_DEF        "sorprendimi"
 //  Frasi-fantasma di Whisper (separate da virgola): se la trascrizione e' ESATTAMENTE
 //  una di queste (tipiche allucinazioni sul silenzio), viene scartata in silenzio.
 //  Vuoto = filtro disattivato. Confronto minuscolo, senza punteggiatura ai bordi.
@@ -254,6 +251,11 @@
     "kiss kiss | Radio Kiss Kiss | http://ice07.fluidstream.net/KissKiss.mp3\n" \
     "rock | rock | http://listen.181fm.com/181-eagle_128k.mp3\n" \
     "pop | pop | http://listen.181fm.com/181-power_128k.mp3"
+//  RISPOSTA PERSONALIZZATA: se REPLY_TRIGGER (parola/frase) e' valorizzato e la domanda lo
+//  CONTIENE, Alexo dice REPLY_TEXT (testo fisso) e salta l'AI. Trigger VUOTO = disattivato
+//  (risponde l'AI). Per scherzi, battute fisse o riprese ripetibili. Runtime da /api/settings.
+#define REPLY_TRIGGER_DEF    ""
+#define REPLY_TEXT_DEF       ""
 
 // --- WiFi -------------------------------------------------------------------
 //  Le credenziali e le API key stanno in include/secrets.h (NON versionato).

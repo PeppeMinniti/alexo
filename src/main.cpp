@@ -71,9 +71,6 @@ public:
 };
 VS1053Diag player(VS1053_XCS_PIN, VS1053_XDCS_PIN, VS1053_DREQ_PIN);
 
-// --- Personali ------------------------------------------------------------------
-int presenza = 0;
-
 // Istante (millis) in cui e' finito l'ultimo AUDIO dall'altoparlante (musica O
 // voce/TTS). Subito dopo, la coda acustica della cassa rientra nel mic e puo'
 // innescare un avvio spurio (falso wake o trigger che sfugge): per
@@ -134,6 +131,17 @@ static bool matchAnyTerm(const String &t, const String &csv, bool contains) {
     start = comma + 1;
   }
   return false;
+}
+
+// RISPOSTA PERSONALIZZATA: se il trigger (gSettings.replyTrigger) e' valorizzato e la
+// domanda lo CONTIENE (confronto minuscolo), torna il testo fisso (gSettings.replyText)
+// e si salta l'AI. Trigger vuoto = disattivato (risponde l'AI). Per scherzi/riprese.
+static String customReplyMatch(const String &testo) {
+  String trig = gSettings.replyTrigger; trig.trim(); trig.toLowerCase();
+  if (trig.isEmpty()) return "";
+  String tl = testo; tl.toLowerCase();
+  if (tl.indexOf(trig) >= 0) return gSettings.replyText;
+  return "";
 }
 
 // --- Display ----------------------------------------------------------------
@@ -366,46 +374,38 @@ static void runInteraction() {
   Serial.printf(">> TESTO: \"%s\"\n", testo.c_str());
   gobboPrintUser(testo);   // mostra "Tu: ..." nella chat
 
-  // 2-bis) MUSICA (match LOCALE dalla lista del pannello) -> suona subito, veloce,
-  // senza disturbare Claude. Lo stop (click/pannello) e il ritorno pulito a riposo
-  // li gestisce playStation().
-  {
-    String tLowerMus = testo; tLowerMus.toLowerCase();
-    const MusicStation *st = musicMatch(tLowerMus);
-    if (st && vsOk) { playStation(st); return; }
-  }
+  // 2-bis) RISPOSTA PERSONALIZZATA: se la domanda contiene il trigger configurato
+  // (gSettings.replyTrigger) uso il testo fisso (replyText) e SALTO musica + Claude.
+  String risposta = customReplyMatch(testo);
+  bool scripted = risposta.length() > 0;
 
-  // 3) PENSO - cervello. Gli do il tool musica (solo se il VS1053 c'e'): per una
-  // richiesta di ASCOLTO non capita dal match locale, Claude sceglie una radio dal
-  // catalogo (musicGenre) invece di rispondere a voce -> non "cade" in chat.
-  String musicGenre;
-  String risposta = llmAsk(testo, vsOk ? &musicGenre : nullptr);
+  if (!scripted) {
+    // MUSICA (match LOCALE dalla lista del pannello) -> suona subito, veloce,
+    // senza disturbare Claude. Lo stop (click/pannello) e il ritorno pulito a
+    // riposo li gestisce playStation().
+    {
+      String tLowerMus = testo; tLowerMus.toLowerCase();
+      const MusicStation *st = musicMatch(tLowerMus);
+      if (st && vsOk) { playStation(st); return; }
+    }
 
-  // Claude ha deciso di mettere musica?
-  if (vsOk && musicGenre.length()) {
-    const MusicStation *cs = musicFromGenre(musicGenre);
-    if (cs) { playStation(cs); return; }
-    // catalogo senza quel genere: lo dice a voce invece di tacere
-    Serial.printf(">> musica: genere \"%s\" non in catalogo\n", musicGenre.c_str());
-    risposta = String("Non ho una stazione per ") + musicGenre + ", mi dispiace.";
+    // 3) PENSO - cervello. Gli do il tool musica (solo se il VS1053 c'e'): per una
+    // richiesta di ASCOLTO non capita dal match locale, Claude sceglie una radio dal
+    // catalogo (musicGenre) invece di rispondere a voce -> non "cade" in chat.
+    String musicGenre;
+    risposta = llmAsk(testo, vsOk ? &musicGenre : nullptr);
+
+    // Claude ha deciso di mettere musica?
+    if (vsOk && musicGenre.length()) {
+      const MusicStation *cs = musicFromGenre(musicGenre);
+      if (cs) { playStation(cs); return; }
+      // catalogo senza quel genere: lo dice a voce invece di tacere
+      Serial.printf(">> musica: genere \"%s\" non in catalogo\n", musicGenre.c_str());
+      risposta = String("Non ho una stazione per ") + musicGenre + ", mi dispiace.";
+    }
   }
 
   if (risposta.isEmpty()) { fail("Errore cervello"); return; }
-
-  // Easter-egg: se la domanda contiene uno dei "termini trigger" (editabili dal
-  // pannello web, gSettings.eggTerms) -> frase scherzosa fissa davanti alla risposta.
-  // Contenuto neutro (personalizzabile dal pannello); ciclato da 'presenza'.
-  String tLower = testo; tLower.toLowerCase();
-  if (matchAnyTerm(tLower, gSettings.eggTerms, true)) {
-    if (presenza == 0) {
-      risposta = String("Rullo di tamburi... ecco a te! ") + risposta;
-    } else if (presenza == 1) {
-      risposta = String("Sorpresa! ") + risposta;
-    } else {
-      risposta = String("E per la serie 'chiedi e ti sarà dato'... ") + risposta;
-    }
-    presenza++;
-  }
 
   Serial.printf(">> ALEXO: \"%s\"\n", risposta.c_str());
   gobboPrint(risposta);   // "Alexo: ..." nella chat (scorre con la voce)

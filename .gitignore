@@ -20,6 +20,9 @@ nvs_config*.json
 MANUALE.pdf
 lista radio*.txt
 
+# --- Cartella PRIVATA: video, materiale social, roba non pubblica (MAI committare) ---
+privato/
+
 # --- Tooling locale ---
 .claude/
 CLAUDE.local.md

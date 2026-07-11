@@ -30,9 +30,10 @@ static void loadDefaults() {
   gSettings.voiceTrigger     = VOICE_TRIGGER_DEF;
   gSettings.llmModel         = LLM_MODEL_DEF;
   gSettings.systemPrompt     = SYSTEM_PROMPT_DEF;
-  gSettings.eggTerms         = EGG_TERMS_DEF;
   gSettings.hallucTerms      = HALLUC_TERMS_DEF;
   gSettings.musicStations    = MUSIC_STATIONS_DEF;
+  gSettings.replyTrigger     = REPLY_TRIGGER_DEF;
+  gSettings.replyText        = REPLY_TEXT_DEF;
 }
 
 // Vincoli di sicurezza (evita valori che romperebbero il firmware).
@@ -77,9 +78,10 @@ void settingsBegin() {
   gSettings.voiceTrigger     = prefs.getString("vtrig",  gSettings.voiceTrigger);
   gSettings.llmModel         = prefs.getString("model",  gSettings.llmModel);
   gSettings.systemPrompt     = prefs.getString("prompt", gSettings.systemPrompt);
-  gSettings.eggTerms         = prefs.getString("egg",    gSettings.eggTerms);
   gSettings.hallucTerms      = prefs.getString("hall",   gSettings.hallucTerms);
   gSettings.musicStations    = prefs.getString("music",  gSettings.musicStations);
+  gSettings.replyTrigger     = prefs.getString("rtrig",  gSettings.replyTrigger);
+  gSettings.replyText        = prefs.getString("rtext",  gSettings.replyText);
   prefs.end();
   clamp();
   Serial.println("[set] impostazioni caricate da NVS (default se assenti)");
@@ -104,9 +106,10 @@ void settingsSave() {
   prefs.putString("vtrig",  gSettings.voiceTrigger);
   prefs.putString("model",  gSettings.llmModel);
   prefs.putString("prompt", gSettings.systemPrompt);
-  prefs.putString("egg",    gSettings.eggTerms);
   prefs.putString("hall",   gSettings.hallucTerms);
   prefs.putString("music",  gSettings.musicStations);
+  prefs.putString("rtrig",  gSettings.replyTrigger);
+  prefs.putString("rtext",  gSettings.replyText);
   prefs.end();
   Serial.println("[set] impostazioni salvate in NVS");
 }

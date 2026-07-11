@@ -43,9 +43,10 @@ static void fillSettingsJson(JsonDocument &doc) {
   doc["voiceTrigger"]     = gSettings.voiceTrigger;
   doc["llmModel"]         = gSettings.llmModel;
   doc["systemPrompt"]     = gSettings.systemPrompt;
-  doc["eggTerms"]         = gSettings.eggTerms;
   doc["hallucTerms"]      = gSettings.hallucTerms;
   doc["musicStations"]    = gSettings.musicStations;
+  doc["replyTrigger"]     = gSettings.replyTrigger;
+  doc["replyText"]        = gSettings.replyText;
   doc["volume"]           = volumeGet();
 }
 
@@ -79,9 +80,10 @@ static void handlePostSettings() {
   if (!doc["voiceTrigger"].isNull())     gSettings.voiceTrigger     = doc["voiceTrigger"].as<String>();
   if (!doc["llmModel"].isNull())         gSettings.llmModel         = doc["llmModel"].as<String>();
   if (!doc["systemPrompt"].isNull())     gSettings.systemPrompt     = doc["systemPrompt"].as<String>();
-  if (!doc["eggTerms"].isNull())         gSettings.eggTerms         = doc["eggTerms"].as<String>();
   if (!doc["hallucTerms"].isNull())      gSettings.hallucTerms      = doc["hallucTerms"].as<String>();
   if (!doc["musicStations"].isNull())    gSettings.musicStations    = doc["musicStations"].as<String>();
+  if (!doc["replyTrigger"].isNull())     gSettings.replyTrigger     = doc["replyTrigger"].as<String>();
+  if (!doc["replyText"].isNull())        gSettings.replyText        = doc["replyText"].as<String>();
   if (!doc["volume"].isNull())           volumeSet(doc["volume"].as<int>());
 
   settingsSave();   // clampa e scrive in NVS

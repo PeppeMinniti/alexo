@@ -130,3 +130,15 @@ condivisione schermo. → **[Vai a ESP32 SOS ›](https://www.peppeminniti.it/as
 
 Rilasciato sotto licenza **MIT** — vedi [LICENSE](LICENSE). Puoi usarlo, modificarlo e
 ridistribuirlo liberamente, mantenendo la nota di copyright.
+
+## Ringraziamenti
+
+Ideazione, progettazione, scelte tecniche, prove sul campo e cura del risultato finale
+sono di **Giuseppe Minniti**. Parte dello sviluppo è stata portata avanti in
+collaborazione con un assistente AI (Claude, di Anthropic), usato come compagno di
+lavoro: per confrontare idee, scrivere e commentare codice, rifinire la documentazione.
+
+Mi piace pensarla come una collaborazione in cui si cresce a vicenda: l'AI non
+sostituisce il lavoro e le decisioni umane, le affianca e le accelera. La direzione, il
+senso critico e la responsabilità delle scelte restano di chi progetta — e proprio da
+questo dialogo nasce l'occasione di imparare, per entrambe le parti.
